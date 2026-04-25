@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id      String        @id @default(uuid())
+  name    String
+  apiKey  String        @unique
+  createdAt     DateTime        @default(now())
+
+  users    User[]
+  notifications Notification[]
+}
+
+model User{
+  id      String      @id @default(uuid())
+  createdAt     DateTime  @default(now())
+  externalUserId   String
+
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  channels   UserChannel[]
+  notifications    Notification[]
+
+  @@unique([tenantId, externalUserId])
+
+}
+
+model UserChannel{
+  id  String @id @default(uuid())
+  userId  String
+  type ChannelType
+  value String
+  verified Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification{
+  id String @id @default(uuid())
+  tenantId String
+  userId String
+
+  type String
+  title String?
+  message String
+
+  status NotificationStatus  @default(PENDING)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deliveris NotificationDelivery[]
+}
+
+model NotificationDelivery{
+  id String @id @default(uuid())
+  notificationId String
+
+  channel  ChannelType
+  status DeliveryStatus @default(PENDING)
+
+  error String?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+}
+
+enum ChannelType{
+  EMAIL
+  SMS
+  WEBSOCKET
+}
+
+enum NotificationStatus{
+  PENDING
+  SENT 
+  FAILED
+}
+
+enum DeliveryStatus{
+  PENDING
+  SENT
+  FAILED
+}
