@@ -1,14 +1,19 @@
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import bcrypt from "bcrypt";
-import generateToken from "../services/auth";
+import { generateToken } from "../services/auth.js";
+import { generateApiKey } from "../services/apiKey.js";
 
 
 export async function handleLogin(req: Request, res: Response) {
-    const { email, password } = req.body;
+    const { email, password }: { email?: string; password?: string } = req.body;
+    if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+    }
 
     try {
         
+        email.toLowerCase();   
         const tenant = await prisma.tenant.findUnique({
             where: {
                 email: email
@@ -17,7 +22,7 @@ export async function handleLogin(req: Request, res: Response) {
 
         if (!tenant) return res.status(401).json({ message: "Invalid email or password" });
 
-        const isValidPass: boolean = await bcrypt.compare(password, tenant.password);
+        const isValidPass = await bcrypt.compare(password, tenant.password);
 
         if (!isValidPass) return res.status(401).json({ message: "Invalid email or password" });
 
@@ -25,6 +30,33 @@ export async function handleLogin(req: Request, res: Response) {
         return res.status(200).json({ message: token });
     }
     catch (err) {
-        return res.json({ message: "Internal server error" });
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export async function handleSignup(req: Request, res: Response) {
+    const { name, email, password }: { name?: string; email?: string; password?: string } = req.body;
+     if (!email || !password || !name) {
+    return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    try {
+        const { rawKey, hashKey } = generateApiKey();
+        const passwordHash = await bcrypt.hash(password, 10);
+        await prisma.tenant.create({
+            data: {
+                name: name,
+                email: email,
+                password: passwordHash,
+                apiKey: hashKey
+            }
+        });
+        return res.status(201).json({
+            message: "Tenant created successfully",
+            apiKey: rawKey
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
