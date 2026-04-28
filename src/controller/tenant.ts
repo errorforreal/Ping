@@ -34,10 +34,12 @@ export async function handleLogin(req: Request, res: Response) {
     }
 }
 
+
+
 export async function handleSignup(req: Request, res: Response) {
     const { name, email, password }: { name?: string; email?: string; password?: string } = req.body;
      if (!email || !password || !name) {
-    return res.status(400).json({ message: "Email and password are required" });
+    return res.status(400).json({ message: "Email,password and name are required" });
     }
 
     try {

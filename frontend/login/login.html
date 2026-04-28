@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Ping | Login</title>
+    <link rel="stylesheet" href="/login/login.css" />
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- LEFT SIDE -->
+        <div class="left">
+            <h1>Real-time notifications,<br><span>delivered instantly.</span></h1>
+            <p>
+                Ping lets you send notifications at scale with speed,
+                reliability, and developer-first APIs.
+            </p>
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <div class="right">
+
+            <div class="logo">
+                <svg viewBox="0 0 100 100" width="42" height="42">
+                    <circle cx="50" cy="50" r="4" fill="#4da3ff" />
+
+                    <path d="M50 50 
+             m 0 -20
+             a 20 20 0 1 1 -14 34
+             a 14 14 0 1 0 10 -24
+             a 8 8 0 1 1 -6 14" fill="none" stroke="#4da3ff" stroke-width="2" stroke-linecap="round" />
+
+                    <ellipse cx="50" cy="50" rx="30" ry="18" fill="none" stroke="#4da3ff" stroke-width="1.2"
+                        opacity="0.25" />
+                </svg>
+                <span>Ping</span>
+            </div>
+
+            <div class="card">
+                <h2>Welcome back</h2>
+
+                <form id="loginForm" autocomplete="off">
+                    <input type="email" placeholder="Email" required autocomplete="off" />
+                    <input type="password" placeholder="Password" required autocomplete="new-password" />
+
+                    <button type="submit">
+                        <span class="btn-text">Login</span>
+                        <div class="spinner hidden"></div>
+                    </button>
+                </form>
+
+                <p class="switch">
+                    New here? <a href="signup">Create account</a>
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="/login/login.js"></script>
+</body>
+
+</html>

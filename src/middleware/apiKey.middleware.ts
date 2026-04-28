@@ -6,7 +6,9 @@ import prisma from "../lib/prisma.js";
 
 export async function verifyKey(req: Request, res: Response, next: NextFunction) {
     
-    const rawKey = req.headers["ping-api-key"] as string;
+    const rawKey = req.headers["ping-api-key"];
+    if (!rawKey || Array.isArray(rawKey)) return res.status(400).json({ message: "Invalid api key" });
+
     const hashedKey = crypto.createHash("sha256").update(rawKey).digest("hex");
     
     const Tenant = await prisma.tenant.findUnique({

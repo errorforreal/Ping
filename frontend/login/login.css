@@ -1,0 +1,130 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: system-ui;
+}
+
+body {
+    background: radial-gradient(circle at 30% 20%, #0f1b35, #050a18);
+    color: white;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 1100px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 80px;
+    padding: 40px;
+}
+
+/* LEFT */
+.left h1 {
+    font-size: 42px;
+    line-height: 1.2;
+}
+
+.left span {
+    color: #4da3ff;
+}
+
+.left p {
+    margin-top: 20px;
+    color: #9fb3d1;
+    max-width: 400px;
+}
+
+/* RIGHT */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.logo span {
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.logo svg {
+    filter: drop-shadow(0 0 12px rgba(77, 163, 255, 0.45));
+}
+
+.card {
+    background: rgba(18, 26, 43, 0.6);
+    backdrop-filter: blur(12px);
+    padding: 40px;
+    border-radius: 18px;
+    max-width: 420px;
+    box-shadow: 0 0 40px rgba(77, 163, 255, 0.12);
+}
+
+.card h2 {
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 18px;
+    border: none;
+    border-radius: 10px;
+    background: #1b263b;
+    color: white;
+}
+
+input:focus {
+    outline: none;
+    box-shadow: 0 0 8px #4da3ff;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #4da3ff;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Spinner */
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid transparent;
+    border-top: 3px solid black;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+.switch {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.switch a {
+    color: #4da3ff;
+}
