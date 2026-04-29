@@ -5,6 +5,7 @@ import { generateToken } from "../services/auth.js";
 import { generateApiKey } from "../services/apiKey.js";
 
 
+
 export async function handleLogin(req: Request, res: Response) {
     const { email, password }: { email?: string; password?: string } = req.body;
     if (!email || !password) {
