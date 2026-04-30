@@ -6,9 +6,13 @@ export type authTenant = {
     id: string,
     role: string
 }
+export type authPayload = {
+    tenantId: string,
+    role: string
+}
 
 export function generateToken(tenant: authTenant):string {
-    const payload = {
+    const payload: authPayload = {
         tenantId: tenant.id,
         role : tenant.role
     }
@@ -22,9 +26,9 @@ export function generateToken(tenant: authTenant):string {
     )
 }
 
-export function validateToken(token: string) {
+export function validateToken(token: string): authPayload {
     try {
-        return jwt.verify(token, process.env.JWT_SECRET as string)
+        return jwt.verify(token, process.env.JWT_SECRET as string) as authPayload;
     } catch (err) {
         throw new Error("Invalid Token");
         
