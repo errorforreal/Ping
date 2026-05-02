@@ -1,7 +1,7 @@
 import type { ConnectionOptions } from "bullmq";
 import { Queue } from "bullmq";
 
-const connection: ConnectionOptions = {
+export const connection: ConnectionOptions = {
     url: process.env.REDIS_URL!,
     maxRetriesPerRequest: null
 }
