@@ -92,6 +92,7 @@ enum ChannelType{
 
 enum NotificationStatus{
   PENDING
+  Processing
   SENT 
   FAILED
 }
