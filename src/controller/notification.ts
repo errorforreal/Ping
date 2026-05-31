@@ -63,10 +63,10 @@ export async function handleNotify(req: Request, res: Response) {
         });
 
       
-        queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
+        await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
     
         return res.status(201).json({ id: notification.id });
-        
+
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }
