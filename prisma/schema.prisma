@@ -45,16 +45,20 @@ model UserChannel{
   userId  String
   type ChannelType
   value String
-  verified Boolean @default(false)
+
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
 }
 
 model Notification{
   id String @id @default(uuid())
   tenantId String
   userId String
+  idempotencyKey String?
+  bullJobId String?
 
   type String
   title String?
@@ -86,13 +90,14 @@ model NotificationDelivery{
 
 enum ChannelType{
   EMAIL
-  SMS
+  PHONE
   WEBSOCKET
 }
 
 enum NotificationStatus{
   PENDING
   Processing
+  RETRYING
   SENT 
   FAILED
 }

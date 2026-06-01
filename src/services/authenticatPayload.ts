@@ -13,7 +13,7 @@ export const payloadSchema = z.object({
         message: z.string()
     }),
 
-    channles: z.array(z.string())
+    channels: z.array(z.string())
 })
 
 export type notificationPayload = z.infer<typeof payloadSchema>;

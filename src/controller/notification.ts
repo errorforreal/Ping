@@ -45,10 +45,42 @@ export async function handleNotify(req: Request, res: Response) {
                     tenantId : tenant.id
                 }
             },
-            update: {},
+            update: {
+                channels: {
+                    upsert: [
+                        {
+                            where: {
+                                userId_type: {
+                                    userId: validPayload.user.id,
+                                    type: "EMAIL"
+                                }
+                            },
+                                update: { value: validPayload.user.email },
+                                create : {type : "EMAIL", value : validPayload.user.email}
+        
+                        },
+                        {
+                            where: {
+                                userId_type: {
+                                    userId: validPayload.user.id,
+                                    type : "PHONE"
+                                }
+                            },
+                            update: { value: validPayload.user.phone },
+                            create : {type : "PHONE", value : validPayload.user.phone}
+                        }
+                    ]
+                }
+            },
             create: {
                 externalUserId: validPayload.user.id,
-                tenantId : tenant.id
+                tenantId: tenant.id,
+                channels: {
+                    create: [
+                        { type: "EMAIL", value: validPayload.user.email },
+                        { type: "PHONE", value : validPayload.user.phone}
+                    ]
+                }
             }
         })
     
