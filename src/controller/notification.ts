@@ -38,51 +38,55 @@ export async function handleNotify(req: Request, res: Response) {
 
     try {
         
-        const user = await prisma.user.upsert({
-            where: {
-                tenantId_externalUserId: {
-                    externalUserId: validPayload.user.id,
-                    tenantId : tenant.id
-                }
-            },
-            update: {
-                channels: {
-                    upsert: [
-                        {
-                            where: {
-                                userId_type: {
-                                    userId: validPayload.user.id,
-                                    type: "EMAIL"
-                                }
-                            },
-                                update: { value: validPayload.user.email },
-                                create : {type : "EMAIL", value : validPayload.user.email}
-        
-                        },
-                        {
-                            where: {
-                                userId_type: {
-                                    userId: validPayload.user.id,
-                                    type : "PHONE"
-                                }
-                            },
-                            update: { value: validPayload.user.phone },
-                            create : {type : "PHONE", value : validPayload.user.phone}
+        const[user, emailChannel, phoneChannel] = await prisma.$transaction(
+            async (tx) => {
+                const u = await tx.user.upsert({
+                    where: {
+                        tenantId_externalUserId: {
+                            tenantId: tenant.id,
+                            externalUserId: validPayload.user.id
                         }
-                    ]
-                }
-            },
-            create: {
-                externalUserId: validPayload.user.id,
-                tenantId: tenant.id,
-                channels: {
-                    create: [
-                        { type: "EMAIL", value: validPayload.user.email },
-                        { type: "PHONE", value : validPayload.user.phone}
-                    ]
-                }
-            }
-        })
+                    },
+                    update: {},
+                    create: {
+                        tenantId: tenant.id,
+                        externalUserId: validPayload.user.id
+                    }
+                });
+
+                const ec = await tx.userChannel.upsert({
+                    where: {
+                        userId_type: {
+                            userId: u.id,
+                            type: "EMAIL"
+                        }
+                    },
+                    update: { value: validPayload.user.email },
+                    create: {
+                        userId: u.id,
+                        value: validPayload.user.email,
+                        type: "EMAIL"
+                    }
+                });
+
+                const pc = await tx.userChannel.upsert({
+                    where: {
+                        userId_type: {
+                            userId: u.id,
+                            type: "PHONE"
+                        }
+                    },
+                    update: { value: validPayload.user.phone },
+                    create: {
+                        userId: u.id,
+                        value: validPayload.user.phone,
+                        type: "PHONE"
+                    }
+                });
+
+                return [u, ec, pc];
+           }
+       )
     
         const notification = await prisma.notification.create({
             data: {
