@@ -38,7 +38,7 @@ export async function handleNotify(req: Request, res: Response) {
 
     try {
         
-        const[user, emailChannel, phoneChannel] = await prisma.$transaction(
+        const user = await prisma.$transaction(
             async (tx) => {
                 const u = await tx.user.upsert({
                     where: {
@@ -54,37 +54,42 @@ export async function handleNotify(req: Request, res: Response) {
                     }
                 });
 
-                const ec = await tx.userChannel.upsert({
-                    where: {
-                        userId_type: {
+                const { email, phone } = validPayload.user;
+
+                if (email) {
+                    await tx.userChannel.upsert({
+                        where: {
+                            userId_type: {
+                                userId: u.id,
+                                type: "EMAIL"
+                            }
+                        },
+                        update: { value: email },
+                        create: {
                             userId: u.id,
+                            value: email,
                             type: "EMAIL"
                         }
-                    },
-                    update: { value: validPayload.user.email },
-                    create: {
-                        userId: u.id,
-                        value: validPayload.user.email,
-                        type: "EMAIL"
-                    }
-                });
-
-                const pc = await tx.userChannel.upsert({
-                    where: {
-                        userId_type: {
+                    });
+                }
+                if (phone) {
+                    await tx.userChannel.upsert({
+                        where: {
+                            userId_type: {
+                                userId: u.id,
+                                type: "PHONE"
+                            }
+                        },
+                        update: { value: phone },
+                        create: {
                             userId: u.id,
+                            value: phone,
                             type: "PHONE"
                         }
-                    },
-                    update: { value: validPayload.user.phone },
-                    create: {
-                        userId: u.id,
-                        value: validPayload.user.phone,
-                        type: "PHONE"
-                    }
-                });
-
-                return [u, ec, pc];
+                    });
+                }
+                
+                return u;
            }
        )
     

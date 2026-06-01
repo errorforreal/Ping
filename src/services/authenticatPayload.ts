@@ -3,8 +3,10 @@ import { z } from "zod";
 export const payloadSchema = z.object({
     user: z.object({
         id: z.string(),
-        email: z.string(),
-        phone: z.string()
+        email: z.string().optional(),
+        phone: z.string().optional()
+    }).refine((data) => data.email || data.phone, {
+        message : "You must provide either an email or a phone number."
     }),
 
     notification: z.object({
