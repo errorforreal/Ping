@@ -16,6 +16,13 @@ export const payloadSchema = z.object({
     }),
 
     channels: z.array(z.string())
+}).refine((data) => {
+    if (data.channels.includes("EMAIL") && !data.user.email) return false;
+    if (data.channels.includes("PHONE") && !data.user.phone) return false;
+    
+    return true;
+}, {
+    message : "Mismatch between requested channels and provided user info."
 })
 
 export type notificationPayload = z.infer<typeof payloadSchema>;

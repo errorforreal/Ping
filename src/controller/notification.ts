@@ -77,14 +77,14 @@ export async function handleNotify(req: Request, res: Response) {
                         where: {
                             userId_type: {
                                 userId: u.id,
-                                type: "PHONE"
+                                type: "SMS"
                             }
                         },
                         update: { value: phone },
                         create: {
                             userId: u.id,
                             value: phone,
-                            type: "PHONE"
+                            type: "SMS"
                         }
                     });
                 }
@@ -93,18 +93,44 @@ export async function handleNotify(req: Request, res: Response) {
            }
        )
     
-        const notification = await prisma.notification.create({
-            data: {
-                tenantId: tenant.id,
-                userId: user.id ,
-                type: validPayload.notification.type,
-                title: validPayload.notification.title,
-                message: validPayload.notification.message,
-            },
-        });
+     
+        const notification = await prisma.$transaction(
+            async (tx) => {
+                const Notification = await tx.notification.create({
+                    data: {
+                        tenantId: tenant.id,
+                        userId: user.id,
+                        type: validPayload.notification.type,
+                        title: validPayload.notification.title,
+                        message: validPayload.notification.message
+                    }
+                });
+
+                if (validPayload.user.email) {
+                    const emailDelivery = await tx.notificationDelivery.create({
+                        data: {
+                            notificationId: Notification.id,
+                            channel: "EMAIL",
+                            status: "PENDING"
+                        }
+                    })
+                }
+                if (validPayload.user.phone) {
+                    const phoneDelivery = await tx.notificationDelivery.create({
+                        data: {
+                            notificationId: Notification.id,
+                            channel: "SMS",
+                            status: "PENDING"
+                        }
+                    })
+                }
+
+                return Notification;
+            }
+        )
 
       
-        await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
+        // await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
     
         return res.status(201).json({ id: notification.id });
 
