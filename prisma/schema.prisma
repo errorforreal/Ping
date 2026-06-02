@@ -90,13 +90,13 @@ model NotificationDelivery{
 
 enum ChannelType{
   EMAIL
-  PHONE
+  SMS
   WEBSOCKET
 }
 
 enum NotificationStatus{
   PENDING
-  Processing
+  PROCESSING
   RETRYING
   SENT 
   FAILED

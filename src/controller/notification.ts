@@ -38,7 +38,7 @@ export async function handleNotify(req: Request, res: Response) {
 
     try {
         
-        const[user, emailChannel, phoneChannel] = await prisma.$transaction(
+        const user = await prisma.$transaction(
             async (tx) => {
                 const u = await tx.user.upsert({
                     where: {
@@ -54,52 +54,83 @@ export async function handleNotify(req: Request, res: Response) {
                     }
                 });
 
-                const ec = await tx.userChannel.upsert({
-                    where: {
-                        userId_type: {
+                const { email, phone } = validPayload.user;
+
+                if (email) {
+                    await tx.userChannel.upsert({
+                        where: {
+                            userId_type: {
+                                userId: u.id,
+                                type: "EMAIL"
+                            }
+                        },
+                        update: { value: email },
+                        create: {
                             userId: u.id,
+                            value: email,
                             type: "EMAIL"
                         }
-                    },
-                    update: { value: validPayload.user.email },
-                    create: {
-                        userId: u.id,
-                        value: validPayload.user.email,
-                        type: "EMAIL"
-                    }
-                });
-
-                const pc = await tx.userChannel.upsert({
-                    where: {
-                        userId_type: {
+                    });
+                }
+                if (phone) {
+                    await tx.userChannel.upsert({
+                        where: {
+                            userId_type: {
+                                userId: u.id,
+                                type: "SMS"
+                            }
+                        },
+                        update: { value: phone },
+                        create: {
                             userId: u.id,
-                            type: "PHONE"
+                            value: phone,
+                            type: "SMS"
                         }
-                    },
-                    update: { value: validPayload.user.phone },
-                    create: {
-                        userId: u.id,
-                        value: validPayload.user.phone,
-                        type: "PHONE"
-                    }
-                });
-
-                return [u, ec, pc];
+                    });
+                }
+                
+                return u;
            }
        )
     
-        const notification = await prisma.notification.create({
-            data: {
-                tenantId: tenant.id,
-                userId: user.id ,
-                type: validPayload.notification.type,
-                title: validPayload.notification.title,
-                message: validPayload.notification.message,
-            },
-        });
+     
+        const notification = await prisma.$transaction(
+            async (tx) => {
+                const Notification = await tx.notification.create({
+                    data: {
+                        tenantId: tenant.id,
+                        userId: user.id,
+                        type: validPayload.notification.type,
+                        title: validPayload.notification.title,
+                        message: validPayload.notification.message
+                    }
+                });
+
+                if (validPayload.user.email) {
+                    const emailDelivery = await tx.notificationDelivery.create({
+                        data: {
+                            notificationId: Notification.id,
+                            channel: "EMAIL",
+                            status: "PENDING"
+                        }
+                    })
+                }
+                if (validPayload.user.phone) {
+                    const phoneDelivery = await tx.notificationDelivery.create({
+                        data: {
+                            notificationId: Notification.id,
+                            channel: "SMS",
+                            status: "PENDING"
+                        }
+                    })
+                }
+
+                return Notification;
+            }
+        )
 
       
-        await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
+        // await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
     
         return res.status(201).json({ id: notification.id });
 

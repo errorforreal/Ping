@@ -13,6 +13,10 @@ function generateIdempotencyKey({ userId, notificationId }: {userId: string, not
     return `ping:notification:${userId}:${notificationId}`;
 }
 
+function generateBullJobId(idempotencyKey: string) {
+    return idempotencyKey.replace(/:/g, '-');
+}
+
 export async function queueEvent({userId, tenantId, notificationId}: queueParams) {
     if (!userId || !tenantId || !notificationId) {
         return {
@@ -20,10 +24,25 @@ export async function queueEvent({userId, tenantId, notificationId}: queueParams
         }
     }
 
-    const idempotencyKey = generateIdempotencyKey({ userId, notificationId });
-    // const notification = await prisma.notification.update({
+    const idempotencyKey: string = generateIdempotencyKey({ userId, notificationId });
+    const bullJobId: string = generateBullJobId(idempotencyKey);
 
-    // })
+    try {
+        
+        const notification = await prisma.notification.update({
+            where: {
+                id : notificationId
+            },
+            data: {
+                status: "PROCESSING",
+                bullJobId : bullJobId
+            }
+        })
+
+        
+    } catch (error) {
+        
+    }
 
 
 }
