@@ -28,21 +28,35 @@ export async function queueEvent({userId, tenantId, notificationId}: queueParams
     const bullJobId: string = generateBullJobId(idempotencyKey);
 
     try {
-        
         const notification = await prisma.notification.update({
             where: {
-                id : notificationId
+                id: notificationId
             },
             data: {
-                status: "PROCESSING",
-                bullJobId : bullJobId
+                idempotencyKey: idempotencyKey,
+                bullJobId: bullJobId
             }
-        })
-
-        
-    } catch (error) {
-        
+        });
+    } catch (dbError) {
+        const message = dbError instanceof Error ? dbError.message : String(dbError);
+        console.error("[Notification Queue] DB error: ", message);
+        return { success: false, reason: 'db_error' };
     }
 
+    try {
+        const job = await notificationQueue.add('notification-event', {
+            notificationId: notificationId,
+            userId: userId
+        }, {
+            jobId: bullJobId
+        });
+    
+        return { success: true, jobId: bullJobId };
+    } catch (enqueueError) {
+        const message = enqueueError instanceof Error ? enqueueError.message : String(enqueueError);
+        console.error("[Notification Queue] Enqueue error:", message);
+        
+        return { success: false, reason: 'enqueue error' };
+    }
 
 }

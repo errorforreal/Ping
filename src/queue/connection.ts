@@ -7,5 +7,12 @@ export const connection: ConnectionOptions = {
 }
 
 export const notificationQueue = new Queue("notifications", {
-    connection
-} );
+    connection,
+    defaultJobOptions: {
+        attempts: 5,
+        backoff: {
+            type: 'exponential',
+            delay : 15000
+        }
+    }
+});
