@@ -4,6 +4,7 @@ import type { notificationPayload } from "../services/authenticatPayload.js";
 import { payloadSchema } from "../services/authenticatPayload.js";
 import { ZodError } from "zod";
 import { queueEvent } from "../queue/notification.queue.js";
+import { ChannelType } from "../generated/prisma/enums.js";
 
 
 export async function handleNotify(req: Request, res: Response) {
@@ -61,14 +62,14 @@ export async function handleNotify(req: Request, res: Response) {
                         where: {
                             userId_type: {
                                 userId: u.id,
-                                type: "EMAIL"
+                                type: ChannelType.EMAIL
                             }
                         },
                         update: { value: email },
                         create: {
                             userId: u.id,
                             value: email,
-                            type: "EMAIL"
+                            type: ChannelType.EMAIL
                         }
                     });
                 }
@@ -77,14 +78,14 @@ export async function handleNotify(req: Request, res: Response) {
                         where: {
                             userId_type: {
                                 userId: u.id,
-                                type: "SMS"
+                                type: ChannelType.SMS
                             }
                         },
                         update: { value: phone },
                         create: {
                             userId: u.id,
                             value: phone,
-                            type: "SMS"
+                            type: ChannelType.SMS
                         }
                     });
                 }
@@ -110,8 +111,7 @@ export async function handleNotify(req: Request, res: Response) {
                     const emailDelivery = await tx.notificationDelivery.create({
                         data: {
                             notificationId: Notification.id,
-                            channel: "EMAIL",
-                            status: "PENDING"
+                            channel:ChannelType.EMAIL,
                         }
                     })
                 }
@@ -119,8 +119,7 @@ export async function handleNotify(req: Request, res: Response) {
                     const phoneDelivery = await tx.notificationDelivery.create({
                         data: {
                             notificationId: Notification.id,
-                            channel: "SMS",
-                            status: "PENDING"
+                            channel: ChannelType.SMS
                         }
                     })
                 }
@@ -130,8 +129,11 @@ export async function handleNotify(req: Request, res: Response) {
         )
 
       
-        // await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
-    
+        const eventQueued = await queueEvent({ userId : user.id, notificationId : notification.id, tenantId : tenant.id});
+        if (!eventQueued.success) {
+            throw new Error();
+        }
+
         return res.status(201).json({ id: notification.id });
 
     } catch (error) {
