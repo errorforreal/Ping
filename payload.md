@@ -11,6 +11,6 @@
     "message": "Your order has been shipped"
   },
 
-  "channels": ["EMAIL", "SMS"],
+  "channels": ["EMAIL", "SMS"]
 
 }
