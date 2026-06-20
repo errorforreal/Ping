@@ -1,27 +1,15 @@
 import "dotenv/config";
 import express from "express";
-
 import { tenantRouter } from "./routes/tenant.js";
-
 
 
 
 const app = express();
 
-
-
-
 app.use(express.json());
 app.use(express.urlencoded({extended : false}));
 
 app.use("/tenant", tenantRouter);
-
-
-
-
-
-
-
 
 
 const PORT = process.env.PORT || 3000;
