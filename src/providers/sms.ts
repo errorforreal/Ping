@@ -1,8 +1,8 @@
-import type { deliveryHandler } from "./email.js";
 import twilio from "twilio";
 import prisma from "../lib/prisma.js";
 import { ChannelType } from "../generated/prisma/enums.js";
 import { generateSmsTemplate } from "../utils/smsTemplate.js";
+import type { deliveryHandler } from "./index.js";
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;

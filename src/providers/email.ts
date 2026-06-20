@@ -2,14 +2,13 @@ import type { NotificationDelivery, Notification } from "../generated/prisma/cli
 import  { ChannelType } from "../generated/prisma/enums.js";
 import { Resend } from 'resend';
 import prisma from "../lib/prisma.js";
-import { generateEmailTemplate } from "../services/emailTemplate.js";
+import { generateEmailTemplate } from "../utils/emailTemplate.js";
+import type { deliveryHandler } from "./index.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const from = process.env.EMAIL_FROM;
 
 
-export type deliveryHandler = (delivery: NotificationDelivery, notification: Notification, userId: string) =>
-    Promise<{ success: boolean, error?: string }>;
 
 export const sendEmail: deliveryHandler = async (delivery, notification, userId) => {
 
@@ -53,7 +52,4 @@ export const sendEmail: deliveryHandler = async (delivery, notification, userId)
     return { success: true };
 
 }
-
-
-
 
