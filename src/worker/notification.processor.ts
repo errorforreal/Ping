@@ -27,11 +27,14 @@ export async function processNotificationJob(job: Job) {
                 }
             });
 
-            const notification = await tx.notification.findUnique({
+            const notification = await tx.notification.update({
                 where: {
                     id: notificationId
+                },
+                data: {
+                    status: NotificationStatus.PROCESSING
                 }
-            })
+            });
 
             return { deliveries, notification };
         }
@@ -65,7 +68,8 @@ export async function processNotificationJob(job: Job) {
                 id : delivery.id
             },
             data: {
-                status: DeliveryStatus.SENT
+                status: DeliveryStatus.SENT,
+                sentAt : new Date()
             }
         })
         
@@ -84,7 +88,8 @@ export async function processNotificationJob(job: Job) {
                             id: failedDelivery.id
                         },
                         data: {
-                            status: DeliveryStatus.FAILED
+                            status: DeliveryStatus.FAILED,
+                            error : failedDelivery.error
                         }
                     });
                 })
@@ -110,7 +115,8 @@ export async function processNotificationJob(job: Job) {
         
         }
 
-        throw new Error(`Failed to deliver: ${failedDeliveries.join(', ')}`);
+        const errorMessages = failedDeliveries.map(f => f.error);
+        throw new Error(`Failed to deliver: ${errorMessages.join(', ')}`);
     }
 
     const updateNotificationStatus = await prisma.notification.update({

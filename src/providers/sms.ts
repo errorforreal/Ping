@@ -47,7 +47,7 @@ export const sendSms: deliveryHandler = async (delivery, notification, userId) =
         });
 
         console.log(`[SMS Provider] SMS sent to user ${userId} : ${message.sid}`);
-        return { success: true };
+        return { success: true, providerMessageId : message.sid };
         
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

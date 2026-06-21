@@ -4,7 +4,7 @@ import { ChannelType } from "../generated/prisma/enums.js";
 import type { NotificationDelivery, Notification } from "../generated/prisma/client.js";
 
 export type deliveryHandler = (delivery: NotificationDelivery, notification: Notification, userId: string) =>
-    Promise<{ success: boolean, error?: string }>;
+    Promise<{ success: boolean, error?: string, providerMessageId? : string }>;
 
 export const ChannelProvider: Record<ChannelType, deliveryHandler> = {
     [ChannelType.SMS]: sendSms,

@@ -134,7 +134,7 @@ export async function handleNotify(req: Request, res: Response) {
             throw new Error();
         }
 
-        return res.status(201).json({ id: notification.id });
+        return res.status(201).json({ jobId: eventQueued.jobId });
 
     } catch (error) {
         return res.status(500).json({ message: "Internal server error" });

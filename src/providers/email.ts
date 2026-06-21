@@ -43,10 +43,9 @@ export const sendEmail: deliveryHandler = async (delivery, notification, userId)
     });
 
     if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error : error.message };
     }
 
-    return { success: true };
+    return { success: true, providerMessageId : data.id };
 
 }
-

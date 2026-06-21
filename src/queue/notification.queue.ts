@@ -1,5 +1,7 @@
 import { notificationQueue } from "./connection.js";
-import  prisma  from "../lib/prisma.js";
+import prisma from "../lib/prisma.js";
+import { NotificationStatus } from "../generated/prisma/enums.js";
+import { Prisma } from "../generated/prisma/client.js";
 
 type queueParams = {
     userId?: string,
@@ -50,10 +52,27 @@ export async function queueEvent({userId, tenantId, notificationId}: queueParams
         }, {
             jobId: bullJobId
         });
+
+        await prisma.notification.update({
+            where: {
+                id : notificationId
+            },
+            data: {
+                status : NotificationStatus.QUEUED
+            }
+        })
     
         return { success: true, jobId: bullJobId };
-    } catch (enqueueError) {
-        const message = enqueueError instanceof Error ? enqueueError.message : String(enqueueError);
+
+    } catch (error) {
+        
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            console.error(`[Notification Queue] Failed to update Notification Status for ${notificationId} but enqueue success`);
+            return { success: true,  jobId: bullJobId };
+            
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
         console.error("[Notification Queue] Enqueue error:", message);
         
         return { success: false, reason: 'enqueue error' };
