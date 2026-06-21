@@ -10,4 +10,4 @@ export const tenantRouter: Router = express.Router();
 tenantRouter.post('/login', handleLogin);
 tenantRouter.post('/signup', handleSignup);
 
-tenantRouter.post('/notify', verifyKey, isRateLimited, handleNotify);
+tenantRouter.post('/api/notify/v1', verifyKey, isRateLimited, handleNotify);

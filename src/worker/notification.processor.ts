@@ -1,5 +1,7 @@
 import type { Job } from "bullmq";
 import prisma from "../lib/prisma.js";
+import { ChannelProvider } from "../providers/index.js";
+import { DeliveryStatus, NotificationStatus } from "../generated/prisma/enums.js";
 
 /*
 what should this function do???
@@ -25,15 +27,14 @@ export async function processNotificationJob(job: Job) {
                 }
             });
 
-            const notification = await tx.notification.findUnique({
+            const notification = await tx.notification.update({
                 where: {
                     id: notificationId
                 },
-                select: {
-                    title: true,
-                    message: true
+                data: {
+                    status: NotificationStatus.PROCESSING
                 }
-            })
+            });
 
             return { deliveries, notification };
         }
@@ -49,6 +50,84 @@ export async function processNotificationJob(job: Job) {
         return;
     }
 
+    const failedDeliveries: {id : string, error : string}[] = [];
+    for (const delivery of deliveries) {
+        if (delivery.status === DeliveryStatus.SENT) continue;
 
-      
+        const providerFn = ChannelProvider[delivery.channel];
+
+        const { success, error } = await providerFn(delivery, notification, userId);
+        if (!success) {
+            console.error(`[Notification Processor] Failed to deliver : ${delivery.id} via ${delivery.channel} : ${error}`);
+            failedDeliveries.push({ id: delivery.id, error: error || "Unknown error" });
+            continue;
+        }
+
+        const updateStatus = await prisma.notificationDelivery.update({
+            where: {
+                id : delivery.id
+            },
+            data: {
+                status: DeliveryStatus.SENT,
+                sentAt : new Date()
+            }
+        })
+        
+    }
+
+    if (failedDeliveries.length > 0) {
+        const maxAttempts = job.opts.attempts || 1;
+        const isLastAttempt = job.attemptsMade >= maxAttempts - 1;
+
+        if (isLastAttempt) {
+            // update all the deliveries in failedDeliveries and the notification status to FAILED
+            await prisma.$transaction(
+                failedDeliveries.map((failedDelivery) => {
+                    return prisma.notificationDelivery.update({
+                        where: {
+                            id: failedDelivery.id
+                        },
+                        data: {
+                            status: DeliveryStatus.FAILED,
+                            error : failedDelivery.error
+                        }
+                    });
+                })
+            );
+
+            await prisma.notification.update({
+                where: {
+                    id : notification.id
+                },
+                data: {
+                    status : NotificationStatus.FAILED
+                }
+            })
+        } else {
+            await prisma.notification.update({
+                where: {
+                   id : notification.id
+                },
+                data: {
+                    status : NotificationStatus.RETRYING
+                }
+            })
+        
+        }
+
+        const errorMessages = failedDeliveries.map(f => f.error);
+        throw new Error(`Failed to deliver: ${errorMessages.join(', ')}`);
+    }
+
+    const updateNotificationStatus = await prisma.notification.update({
+        where: {
+            id : notification.id
+        },
+        data: {
+            status : NotificationStatus.SENT
+        }
+    })
+
+    console.log(`[Notification Processor] Job completed for : ${job.id}`);
+    
 }

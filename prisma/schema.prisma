@@ -80,6 +80,8 @@ model NotificationDelivery{
   channel  ChannelType
   status DeliveryStatus @default(PENDING)
 
+  providerMessageId String?
+
   error String?
   sentAt DateTime?
   createdAt DateTime @default(now())
@@ -96,6 +98,7 @@ enum ChannelType{
 
 enum NotificationStatus{
   PENDING
+  QUEUED
   PROCESSING
   RETRYING
   SENT 
