@@ -13,13 +13,11 @@ const from = process.env.SMS_FROM;
 export const sendSms: deliveryHandler = async (delivery, notification, userId) => {
 
     if (!accountSid || !authToken) {
-        console.error(`[SMS Provider] AccountSid or AuthToken not set`);
-        return { success: false };
+        return { success: false, error: "AccountSid or AuthToken not set" };
     }
 
     if (!from) {
-        console.error(`[SMS Provider] SMS_FROM not set`);
-        return { success: false };
+        return { success: false, error: "SMS_FROM not set" };
     }
 
     let channelValue: { value: string } | null;
@@ -36,10 +34,9 @@ export const sendSms: deliveryHandler = async (delivery, notification, userId) =
             }
         });
 
-        if (!channelValue) return { success: false };
+        if (!channelValue) return { success: false, error: "User has no SMS channel configured" };
     } catch (error) {
-        console.error(`[SMS Provider] Error fetching user channel value for user ${userId}: ${error}`);
-        return { success: false };
+        return { success: false, error: `Error fetching user channel: ${error}` };
     }
 
     try {
@@ -54,9 +51,6 @@ export const sendSms: deliveryHandler = async (delivery, notification, userId) =
         
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.log("Twilio error : ", error);
-
         return { success: false, error: errorMessage };
-        
     }
 }

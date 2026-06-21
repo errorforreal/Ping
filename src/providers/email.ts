@@ -13,8 +13,7 @@ const from = process.env.EMAIL_FROM;
 export const sendEmail: deliveryHandler = async (delivery, notification, userId) => {
 
     if (!from) {
-        console.error(`[Email Provider] Email_From not set`);
-        return { success: false };
+        return { success: false, error: "EMAIL_FROM not set" };
     }
 
     let channelValue: {value : string} | null;
@@ -30,11 +29,10 @@ export const sendEmail: deliveryHandler = async (delivery, notification, userId)
                 value: true
             }
         });
-        if (!channelValue) return { success: false };
+        if (!channelValue) return { success: false, error: "User has no EMAIL channel configured" };
 
     } catch (error) {
-        console.error(`[Email Provider] Error fetching user channel value for user ${userId}: ${error}`);
-        return { success: false };
+        return { success: false, error: `Error fetching user channel: ${error}` };
     }
 
     const { data, error } = await resend.emails.send({
@@ -45,7 +43,6 @@ export const sendEmail: deliveryHandler = async (delivery, notification, userId)
     });
 
     if (error) {
-        console.error("Resend error", error);
         return { success: false, error: error.message };
     }
 
