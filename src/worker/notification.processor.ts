@@ -2,6 +2,7 @@ import type { Job } from "bullmq";
 import prisma from "../lib/prisma.js";
 import { ChannelProvider } from "../providers/index.js";
 import { DeliveryStatus, NotificationStatus } from "../generated/prisma/enums.js";
+import { runSweeperLogic } from "./sweeper.js";
 
 /*
 what should this function do???
@@ -15,6 +16,14 @@ handle this edge case of not sending the email notification again
 
 
 export async function processNotificationJob(job: Job) {
+
+    if (job.name === "sweeper-job") {
+        const { success, error } = await runSweeperLogic();
+        if (!success) {
+            console.error(`[Notification Sweeper] Failed to run : ${error} `);
+        }
+        return;
+    }
     
     const { notificationId, userId } = job.data; 
 

@@ -1,6 +1,7 @@
 import { Worker } from "bullmq";
 import { connection } from "../queue/connection.js";
 import { processNotificationJob } from "./notification.processor.js";
+import { notificationQueue } from "../queue/connection.js";
 
 
 export async function startWorker() {
@@ -21,6 +22,12 @@ export async function startWorker() {
         if (!job) return;
         console.log(`[Notification Worker] Job ${job.id} failed, ${err.message}`);
     })
+
+    await notificationQueue.add('sweeper-job', {}, {
+        repeat: {
+            pattern: "*/5 * * * *"
+        }
+    });
 
 }
 
