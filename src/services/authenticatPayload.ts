@@ -15,7 +15,7 @@ export const payloadSchema = z.object({
         message: z.string()
     }),
 
-    channels: z.array(z.string())
+    channels: z.array(z.enum(["EMAIL", "SMS"])).min(1, "You must provide at least one channel")
 }).refine((data) => {
     if (data.channels.includes("EMAIL") && !data.user.email) return false;
     if (data.channels.includes("SMS") && !data.user.phone) return false;

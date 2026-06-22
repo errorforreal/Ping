@@ -65,7 +65,7 @@ export async function processNotificationJob(job: Job) {
 
         const providerFn = ChannelProvider[delivery.channel];
 
-        const { success, error } = await providerFn(delivery, notification, userId);
+        const { success, error, providerMessageId } = await providerFn(delivery, notification, userId);
         if (!success) {
             console.error(`[Notification Processor] Failed to deliver : ${delivery.id} via ${delivery.channel} : ${error}`);
             failedDeliveries.push({ id: delivery.id, error: error || "Unknown error" });
@@ -78,7 +78,8 @@ export async function processNotificationJob(job: Job) {
             },
             data: {
                 status: DeliveryStatus.SENT,
-                sentAt : new Date()
+                sentAt: new Date(),
+                providerMessageId : providerMessageId || "Provider did not return a message id"
             }
         })
         

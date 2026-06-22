@@ -107,7 +107,7 @@ export async function handleNotify(req: Request, res: Response) {
                     }
                 });
 
-                if (validPayload.user.email) {
+                if (validPayload.channels.includes("EMAIL")) {
                     const emailDelivery = await tx.notificationDelivery.create({
                         data: {
                             notificationId: Notification.id,
@@ -115,7 +115,7 @@ export async function handleNotify(req: Request, res: Response) {
                         }
                     })
                 }
-                if (validPayload.user.phone) {
+                if (validPayload.channels.includes("SMS")) {
                     const phoneDelivery = await tx.notificationDelivery.create({
                         data: {
                             notificationId: Notification.id,
