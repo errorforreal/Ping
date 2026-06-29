@@ -1,17 +1,61 @@
 import { useState } from 'react';
 import './Auth.css';
 
-export default function Auth() {
+interface AuthProps {
+  onLogin: (token: string) => void;
+}
+
+export default function Auth({ onLogin }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Fake loading state for UI demonstration (Commit 3 requirement)
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setError(null);
+    setSuccess(null);
+
+    const url = isLogin ? '/api/tenant/login' : '/api/tenant/signup';
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      if (isLogin) {
+        // Backend currently returns { message: "token" }
+        onLogin(data.message);
+      } else {
+        // Backend returns { message: "Tenant created successfully", apiKey: "..." }
+        setSuccess(`Tenant created! Save this API Key: ${data.apiKey}`);
+        setIsLogin(true); // Switch to login screen
+        setFormData({ ...formData, password: '' }); // Clear password for security
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -25,6 +69,20 @@ export default function Auth() {
           </p>
         </div>
 
+        {error && (
+          <div style={{ color: 'var(--accent-error)', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center', border: '1px solid var(--accent-error)', padding: '0.5rem', borderRadius: '4px' }}>
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{ color: 'var(--accent-success)', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center', border: '1px solid var(--accent-success)', padding: '0.5rem', borderRadius: '4px' }}>
+            {success}
+            <br/><br/>
+            Please sign in below.
+          </div>
+        )}
+
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
             <div className="input-group">
@@ -35,6 +93,8 @@ export default function Auth() {
                 className="auth-input" 
                 placeholder="Acme Corp" 
                 required 
+                value={formData.name}
+                onChange={handleChange}
               />
             </div>
           )}
@@ -47,6 +107,8 @@ export default function Auth() {
               className="auth-input text-mono" 
               placeholder="developer@acme.com" 
               required 
+              value={formData.email}
+              onChange={handleChange}
             />
           </div>
 
@@ -58,6 +120,8 @@ export default function Auth() {
               className="auth-input text-mono" 
               placeholder="••••••••••••" 
               required 
+              value={formData.password}
+              onChange={handleChange}
             />
           </div>
 
@@ -68,7 +132,11 @@ export default function Auth() {
 
         <div className="auth-toggle">
           {isLogin ? "Don't have an account?" : "Already have a tenant?"}
-          <button type="button" onClick={() => setIsLogin(!isLogin)}>
+          <button type="button" onClick={() => {
+            setIsLogin(!isLogin);
+            setError(null);
+            setSuccess(null);
+          }}>
             {isLogin ? 'Sign up' : 'Sign in'}
           </button>
         </div>
