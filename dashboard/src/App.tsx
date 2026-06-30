@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import Auth from './components/Auth'
+import DashboardLayout from './components/layout/DashboardLayout'
 
 function App() {
   const [token, setToken] = useState<string | null>(null);
@@ -27,33 +28,31 @@ function App() {
     return <Auth onLogin={handleLogin} />
   }
 
-  // Placeholder for Phase 3 (Dashboard Skeleton)
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 className="text-gradient" style={{ fontSize: '1.5rem' }}>Ping Dashboard</h1>
-        <button onClick={handleLogout} className="btn-primary" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
-          Sign Out
-        </button>
-      </header>
-      
-      <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', marginTop: '10vh' }}>
-        <h2 style={{ marginBottom: '1rem' }}>Welcome to the Developer Portal</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          Your JWT token is securely stored in localStorage.
+    <DashboardLayout onLogout={handleLogout}>
+      {/* Temporary Placeholder Content for Commit 5 */}
+      <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', marginTop: '2rem' }}>
+        <h2 style={{ marginBottom: '1rem', fontSize: '2rem' }}>Dashboard Scaffold Complete</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem' }}>
+          The responsive Sidebar and Top Navbar layout has been successfully implemented.
         </p>
-        <p className="text-mono" style={{ 
-          background: 'rgba(0,0,0,0.5)', 
-          padding: '1rem', 
-          borderRadius: '4px', 
-          wordBreak: 'break-all',
-          color: 'var(--accent-primary)',
-          fontSize: '0.8rem'
-        }}>
-          {token}
-        </p>
+        <div style={{ display: 'inline-block', textAlign: 'left' }}>
+          <p className="text-mono" style={{ 
+            background: 'var(--bg-primary)', 
+            padding: '1.5rem', 
+            borderRadius: '6px', 
+            border: '1px solid var(--border-light)',
+            color: 'var(--accent-primary)',
+            fontSize: '0.9rem',
+            wordBreak: 'break-all',
+            maxWidth: '600px'
+          }}>
+            <span style={{ color: 'var(--text-secondary)' }}>// Active JWT Token</span><br/><br/>
+            {token}
+          </p>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
 
