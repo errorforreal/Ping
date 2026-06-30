@@ -1,26 +1,22 @@
-import { useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import './Layout.css';
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
   onLogout: () => void;
 }
 
-export default function DashboardLayout({ children, onLogout }: DashboardLayoutProps) {
-  // Temporary state until Commit 6 sets up React Router
-  const [activePath, setActivePath] = useState('analytics');
-
+export default function DashboardLayout({ onLogout }: DashboardLayoutProps) {
   return (
     <div className="dashboard-container">
-      <Sidebar activePath={activePath} setActivePath={setActivePath} />
+      <Sidebar />
       
       <main className="main-content">
         <Navbar onLogout={onLogout} />
         
         <div className="page-content">
-          {children}
+          <Outlet />
         </div>
       </main>
     </div>

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css'
 import Auth from './components/Auth'
 import DashboardLayout from './components/layout/DashboardLayout'
+import Analytics from './pages/Analytics';
+import ApiKeys from './pages/ApiKeys';
+import Docs from './pages/Docs';
 
 function App() {
   const [token, setToken] = useState<string | null>(null);
@@ -24,35 +28,26 @@ function App() {
     localStorage.removeItem('ping_token');
   };
 
-  if (!token) {
-    return <Auth onLogin={handleLogin} />
-  }
-
   return (
-    <DashboardLayout onLogout={handleLogout}>
-      {/* Temporary Placeholder Content for Commit 5 */}
-      <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', marginTop: '2rem' }}>
-        <h2 style={{ marginBottom: '1rem', fontSize: '2rem' }}>Dashboard Scaffold Complete</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem' }}>
-          The responsive Sidebar and Top Navbar layout has been successfully implemented.
-        </p>
-        <div style={{ display: 'inline-block', textAlign: 'left' }}>
-          <p className="text-mono" style={{ 
-            background: 'var(--bg-primary)', 
-            padding: '1.5rem', 
-            borderRadius: '6px', 
-            border: '1px solid var(--border-light)',
-            color: 'var(--accent-primary)',
-            fontSize: '0.9rem',
-            wordBreak: 'break-all',
-            maxWidth: '600px'
-          }}>
-            <span style={{ color: 'var(--text-secondary)' }}>// Active JWT Token</span><br/><br/>
-            {token}
-          </p>
-        </div>
-      </div>
-    </DashboardLayout>
+    <BrowserRouter>
+      <Routes>
+        {/* Public Auth Route */}
+        <Route 
+          path="/auth" 
+          element={!token ? <Auth onLogin={handleLogin} /> : <Navigate to="/" replace />} 
+        />
+
+        {/* Protected Dashboard Routes */}
+        <Route 
+          path="/" 
+          element={token ? <DashboardLayout onLogout={handleLogout} /> : <Navigate to="/auth" replace />}
+        >
+          <Route index element={<Analytics />} />
+          <Route path="keys" element={<ApiKeys />} />
+          <Route path="docs" element={<Docs />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
