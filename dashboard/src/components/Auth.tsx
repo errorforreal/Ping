@@ -9,7 +9,7 @@ export default function Auth({ onLogin }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,7 +25,6 @@ export default function Auth({ onLogin }: AuthProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setSuccess(null);
 
     const url = isLogin ? '/api/tenant/login' : '/api/tenant/signup';
     
@@ -47,8 +46,7 @@ export default function Auth({ onLogin }: AuthProps) {
         onLogin(data.message);
       } else {
         // Backend returns { message: "Tenant created successfully", apiKey: "..." }
-        setSuccess(`Tenant created! Save this API Key: ${data.apiKey}`);
-        setIsLogin(true); // Switch to login screen
+        setNewApiKey(data.apiKey);
         setFormData({ ...formData, password: '' }); // Clear password for security
       }
     } catch (err: any) {
@@ -72,14 +70,6 @@ export default function Auth({ onLogin }: AuthProps) {
         {error && (
           <div style={{ color: 'var(--accent-error)', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center', border: '1px solid var(--accent-error)', padding: '0.5rem', borderRadius: '4px' }}>
             {error}
-          </div>
-        )}
-
-        {success && (
-          <div style={{ color: 'var(--accent-success)', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center', border: '1px solid var(--accent-success)', padding: '0.5rem', borderRadius: '4px' }}>
-            {success}
-            <br/><br/>
-            Please sign in below.
           </div>
         )}
 
@@ -131,17 +121,57 @@ export default function Auth({ onLogin }: AuthProps) {
         </form>
 
         <div className="auth-toggle">
-          {isLogin ? "Don't have an account?" : "Already have a tenant?"}
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
           <button type="button" onClick={() => {
             setIsLogin(!isLogin);
             setError(null);
-            setSuccess(null);
           }}>
             {isLogin ? 'Sign up' : 'Sign in'}
           </button>
         </div>
         
       </div>
+
+      {newApiKey && (
+        <div className="toast-overlay">
+          <div className="toast-modal glass-panel">
+            <h2 className="text-gradient" style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>Tenant Created!</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+              Your workspace is ready. Please save your API key now. For security reasons, it will never be shown again.
+            </p>
+            <div className="text-mono" style={{ background: '#09090b', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-light)', color: 'var(--accent-primary)', wordBreak: 'break-all', marginBottom: '2rem', fontSize: '0.9rem' }}>
+              {newApiKey}
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                type="button"
+                className="btn-primary" 
+                style={{ flex: 1, background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-light)' }}
+                onClick={(e) => {
+                  navigator.clipboard.writeText(newApiKey);
+                  const btn = e.currentTarget;
+                  btn.textContent = 'Copied!';
+                  setTimeout(() => btn.textContent = 'Copy API Key', 2000);
+                }}
+              >
+                Copy API Key
+              </button>
+              <button 
+                type="button"
+                className="btn-primary" 
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setNewApiKey(null);
+                  setIsLogin(true);
+                }}
+              >
+                Okay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
