@@ -32,6 +32,11 @@ export default function Analytics() {
         }
       });
       
+      if (res.status === 401) {
+        localStorage.removeItem('ping_token');
+        window.location.href = '/auth';
+        return;
+      }
       if (!res.ok) throw new Error('Failed to fetch analytics data');
       
       const data = await res.json();
