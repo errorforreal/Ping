@@ -25,9 +25,35 @@ function App() {
     localStorage.setItem('ping_token', newToken);
   };
 
-  const handleLogout = () => {
-    setToken(null);
-    localStorage.removeItem('ping_token');
+  const handleLogout = async () => {
+    if (!token) {
+      setToken(null);
+      localStorage.removeItem('ping_token');
+      return;
+    }
+
+    try {
+      const [response] = await Promise.all([
+        fetch('/api/tenant/logout', { 
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }),
+        new Promise(resolve => setTimeout(resolve, 800)) // Artificial delay for UX spinner
+      ]);
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        console.warn(`Server logout returned ${response.status}:`, data.message);
+      }
+    } catch (e) {
+      console.error("Network error during server logout:", e);
+    } finally {
+      // Always clear local session to ensure the user isn't trapped logged in
+      setToken(null);
+      localStorage.removeItem('ping_token');
+    }
   };
 
   return (

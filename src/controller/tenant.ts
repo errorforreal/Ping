@@ -3,7 +3,7 @@ import prisma from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../services/auth.js";
 import { generateApiKey } from "../services/apiKey.js";
-
+import { redis } from "../lib/redis.js";
 
 
 export async function handleLogin(req: Request, res: Response) {
@@ -88,4 +88,23 @@ export async function handleRegenerateKey(req: Request, res: Response) {
     } catch (err) {
         return res.status(500).json({ message: "Internal server error" });
     }
+}
+
+export async function handleTenantLogout(req: Request, res: Response) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(400).json({ message: "Token is required!" });
+
+    try {
+        const token = authHeader.split('Bearer ')[1];
+        if (token) {
+            // Blacklist the token in Redis for 7 days
+            await redis.set(`bl_${token}`, "revoked", "EX", 7 * 24 * 60 * 60);
+        }
+        return res.status(200).json({ message: "Logged out successfully" });
+
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+
+    
 }
