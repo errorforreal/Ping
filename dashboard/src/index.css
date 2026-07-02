@@ -19,6 +19,20 @@
 
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  
+  --bg-glass: rgba(33, 33, 33, 0.7);
+}
+
+/* ponytail: simplest theme toggle, minimal override class */
+.light-theme {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f4f5;
+  --bg-tertiary: #e4e4e7;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-glowing: rgba(255, 172, 90, 0.4);
+  --bg-glass: rgba(255, 255, 255, 0.7);
 }
 
 * {
@@ -49,7 +63,7 @@ body {
 
 /* Glassmorphism & Layouts */
 .glass-panel {
-  background: rgba(33, 33, 33, 0.7);
+  background: var(--bg-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
@@ -70,8 +84,8 @@ body {
 
 /* Interactive Elements */
 .btn-primary {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
   border: none;
   border-radius: 4px;
   padding: 0.5rem 1rem;

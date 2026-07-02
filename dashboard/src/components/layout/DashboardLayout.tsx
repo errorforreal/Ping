@@ -4,7 +4,7 @@ import Navbar from './Navbar';
 import './Layout.css';
 
 interface DashboardLayoutProps {
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }
 
 export default function DashboardLayout({ onLogout }: DashboardLayoutProps) {
