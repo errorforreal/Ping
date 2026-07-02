@@ -63,3 +63,29 @@ export async function handleSignup(req: Request, res: Response) {
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export async function handleRegenerateKey(req: Request, res: Response) {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
+
+    try {
+        email.toLowerCase();
+        const tenant = await prisma.tenant.findUnique({ where: { email } });
+        if (!tenant) return res.status(401).json({ message: "Invalid email or password" });
+
+        const isValidPass = await bcrypt.compare(password, tenant.password);
+        if (!isValidPass) return res.status(401).json({ message: "Invalid email or password" });
+
+        const { rawKey, hashKey } = generateApiKey();
+        await prisma.tenant.update({
+            where: { id: tenant.id },
+            data: { apiKey: hashKey }
+        });
+
+        console.log("[API Key] successfully changed for tenant : ", tenant.id);
+        
+        return res.status(200).json({ message: "Key regenerated", apiKey: rawKey });
+    } catch (err) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}

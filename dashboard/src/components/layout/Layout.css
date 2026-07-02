@@ -83,7 +83,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  background: rgba(22, 22, 22, 0.8);
+  background: var(--bg-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   position: sticky;

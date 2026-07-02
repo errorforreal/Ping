@@ -8,14 +8,16 @@ import ApiKeys from './pages/ApiKeys';
 import Docs from './pages/Docs';
 
 function App() {
-  const [token, setToken] = useState<string | null>(null);
+  // Initialize token synchronously to prevent redirect flashes on page reload
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ping_token'));
 
-  // Check local storage for existing token on load
+  // Optional: Listen for cross-tab token changes
   useEffect(() => {
-    const savedToken = localStorage.getItem('ping_token');
-    if (savedToken) {
-      setToken(savedToken);
-    }
+    const handleStorage = () => {
+      setToken(localStorage.getItem('ping_token'));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const handleLogin = (newToken: string) => {
