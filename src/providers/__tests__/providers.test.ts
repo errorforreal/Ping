@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { sendEmail } from '../email.js';
-import { sendSms } from '../sms.js';
+import { sendSms } from '../whatsapp.js';
 import { ChannelType, DeliveryStatus } from '../../generated/prisma/enums.js';
 import prisma from '../../lib/prisma.js';
 import { Resend } from 'resend';

@@ -12,8 +12,10 @@ export default function DashboardLayout({ onLogout }: DashboardLayoutProps) {
     <div className="dashboard-container">
       <Sidebar />
       
-      <main className="main-content">
-        <Navbar onLogout={onLogout} />
+      <main className="main-content" style={{ flex: 1, minWidth: 'calc(100vw - 260px)', width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: '100%' }}>
+          <Navbar onLogout={onLogout} />
+        </div>
         
         <div className="page-content">
           <Outlet />

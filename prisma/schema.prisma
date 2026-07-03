@@ -92,7 +92,7 @@ model NotificationDelivery{
 
 enum ChannelType{
   EMAIL
-  SMS
+  WHATSAPP
   WEBSOCKET
 }
 

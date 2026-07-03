@@ -74,6 +74,8 @@
   flex-direction: column;
   overflow-y: auto;
   position: relative;
+  min-width: calc(100vw - 260px);
+  width: 100%;
 }
 
 .navbar {
@@ -89,6 +91,7 @@
   position: sticky;
   top: 0;
   z-index: 5;
+  width: 100%;
 }
 
 .navbar-right {
