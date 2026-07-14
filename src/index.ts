@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import { tenantRouter } from "./routes/tenant.js";
+import "./worker/worker.js";
 
 
 import { analyticsRouter } from "./routes/analytics.js";

@@ -61,9 +61,9 @@ describe('Notification Processor', () => {
         // Expect SMS provider TO be called
         expect(ChannelProvider.SMS).toHaveBeenCalled();
         
-        // Assert notification marked SENT at the end
+        // Twilio accepted the SMS, but delivery is not successful until its callback.
         expect(prisma.notification.update).toHaveBeenCalledWith(expect.objectContaining({
-            data: { status: NotificationStatus.SENT }
+            data: { status: NotificationStatus.PROCESSING }
         }));
     });
 
@@ -102,6 +102,58 @@ describe('Notification Processor', () => {
         // Assert parent notification is permanently marked FAILED
         expect(prisma.notification.update).toHaveBeenCalledWith(expect.objectContaining({
             data: { status: NotificationStatus.FAILED }
+        }));
+    });
+
+    it('keeps an accepted SMS pending and persists its SID', async () => {
+        vi.mocked(prisma.$transaction).mockResolvedValueOnce({
+            deliveries: [{ id: 'del_sms', channel: ChannelType.SMS, status: DeliveryStatus.PENDING, providerMessageId: null }],
+            notification: mockNotification
+        });
+        vi.mocked(ChannelProvider.SMS).mockResolvedValueOnce({ success: true, providerMessageId: 'SM123' });
+
+        await processNotificationJob(mockJob);
+
+        expect(prisma.notificationDelivery.update).toHaveBeenCalledWith({
+            where: { id: 'del_sms' },
+            data: { status: DeliveryStatus.PENDING, sentAt: null, providerMessageId: 'SM123' }
+        });
+        expect(prisma.notification.update).toHaveBeenCalledWith(expect.objectContaining({
+            data: { status: NotificationStatus.PROCESSING }
+        }));
+    });
+
+    it('does not resend accepted or terminal deliveries', async () => {
+        vi.mocked(prisma.$transaction).mockResolvedValueOnce({
+            deliveries: [
+                { id: 'accepted', channel: ChannelType.SMS, status: DeliveryStatus.PENDING, providerMessageId: 'SM123' },
+                { id: 'delivered', channel: ChannelType.SMS, status: DeliveryStatus.DELIVERED, providerMessageId: 'SM456' },
+                { id: 'email', channel: ChannelType.EMAIL, status: DeliveryStatus.SENT, providerMessageId: 'smtp-1' }
+            ],
+            notification: mockNotification
+        });
+
+        await processNotificationJob(mockJob);
+
+        expect(ChannelProvider.SMS).not.toHaveBeenCalled();
+        expect(ChannelProvider.EMAIL).not.toHaveBeenCalled();
+        expect(prisma.notificationDelivery.update).not.toHaveBeenCalled();
+        expect(prisma.notification.update).toHaveBeenCalledWith(expect.objectContaining({
+            data: { status: NotificationStatus.PROCESSING }
+        }));
+    });
+
+    it('marks email-only success SENT', async () => {
+        vi.mocked(prisma.$transaction).mockResolvedValueOnce({
+            deliveries: [{ id: 'del_email', channel: ChannelType.EMAIL, status: DeliveryStatus.PENDING }],
+            notification: mockNotification
+        });
+        vi.mocked(ChannelProvider.EMAIL).mockResolvedValueOnce({ success: true, providerMessageId: 'smtp-1' });
+
+        await processNotificationJob(mockJob);
+
+        expect(prisma.notification.update).toHaveBeenCalledWith(expect.objectContaining({
+            data: { status: NotificationStatus.SENT }
         }));
     });
 });

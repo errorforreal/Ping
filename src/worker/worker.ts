@@ -7,7 +7,7 @@ import { notificationQueue } from "../queue/connection.js";
 export async function startWorker() {
 
     console.log("Notification Worker starting....");
-    
+
     const notificationWorker = new Worker("notifications", processNotificationJob, {
             connection,
             concurrency : 5
@@ -28,6 +28,8 @@ export async function startWorker() {
             pattern: "*/5 * * * *"
         }
     });
+
+    console.log("Notification Worker started....");
 
 }
 

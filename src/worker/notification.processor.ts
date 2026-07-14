@@ -1,7 +1,7 @@
 import type { Job } from "bullmq";
 import prisma from "../lib/prisma.js";
 import { ChannelProvider } from "../providers/index.js";
-import { DeliveryStatus, NotificationStatus } from "../generated/prisma/enums.js";
+import { ChannelType, DeliveryStatus, NotificationStatus } from "../generated/prisma/enums.js";
 import { runSweeperLogic } from "./sweeper.js";
 
 /*
@@ -61,7 +61,8 @@ export async function processNotificationJob(job: Job) {
 
     const failedDeliveries: {id : string, error : string}[] = [];
     for (const delivery of deliveries) {
-        if (delivery.status === DeliveryStatus.SENT) continue;
+        if (delivery.status === DeliveryStatus.SENT || delivery.status === DeliveryStatus.DELIVERED || delivery.status === DeliveryStatus.FAILED) continue;
+        if (delivery.channel === ChannelType.SMS && delivery.providerMessageId) continue;
 
         const providerFn = ChannelProvider[delivery.channel];
 
@@ -71,15 +72,19 @@ export async function processNotificationJob(job: Job) {
             failedDeliveries.push({ id: delivery.id, error: error || "Unknown error" });
             continue;
         }
+        if (delivery.channel === ChannelType.SMS && !providerMessageId) {
+            failedDeliveries.push({ id: delivery.id, error: "Twilio did not return a message SID" });
+            continue;
+        }
 
-        const updateStatus = await prisma.notificationDelivery.update({
+        await prisma.notificationDelivery.update({
             where: {
                 id : delivery.id
             },
             data: {
-                status: DeliveryStatus.SENT,
-                sentAt: new Date(),
-                providerMessageId : providerMessageId || "Provider did not return a message id"
+                status: delivery.channel === ChannelType.SMS ? DeliveryStatus.PENDING : DeliveryStatus.SENT,
+                sentAt: delivery.channel === ChannelType.SMS ? null : new Date(),
+                ...(providerMessageId ? { providerMessageId } : {})
             }
         })
         
@@ -129,15 +134,25 @@ export async function processNotificationJob(job: Job) {
         throw new Error(`Failed to deliver: ${errorMessages.join(', ')}`);
     }
 
-    const updateNotificationStatus = await prisma.notification.update({
+    const hasTerminalFailure = deliveries.some(delivery => delivery.status === DeliveryStatus.FAILED);
+    const awaitingSmsCallback = deliveries.some(delivery =>
+        delivery.channel === ChannelType.SMS &&
+        delivery.status === DeliveryStatus.PENDING
+    );
+
+    await prisma.notification.update({
         where: {
             id : notification.id
         },
         data: {
-            status : NotificationStatus.SENT
+            status: hasTerminalFailure
+                ? NotificationStatus.FAILED
+                : awaitingSmsCallback
+                    ? NotificationStatus.PROCESSING
+                    : NotificationStatus.SENT
         }
     })
 
     console.log(`[Notification Processor] Job completed for : ${job.id}`);
-    
+
 }
