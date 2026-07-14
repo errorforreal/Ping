@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+const e164Phone = z.string().trim().regex(/^\+[1-9]\d{7,14}$/, "Phone number must be valid E.164");
+
 export const payloadSchema = z.object({
     user: z.object({
         id: z.string(),
         email: z.string().optional(),
-        phone: z.string().optional()
+        phone: e164Phone.optional()
     }).refine((data) => data.email || data.phone, {
         message : "You must provide either an email or a phone number."
     }),

@@ -56,4 +56,19 @@ describe('Payload Validation', () => {
         const result = payloadSchema.safeParse(invalidPayload);
         expect(result.success).toBe(false);
     });
+
+    it('normalizes surrounding whitespace and rejects non-E.164 phone numbers', () => {
+        const base = {
+            user: { id: 'user_123', phone: '  +14155550199  ' },
+            notification: { type: 'ALERT', title: 'Test', message: 'Hello' },
+            channels: ['SMS']
+        };
+
+        const valid = payloadSchema.safeParse(base);
+        expect(valid.success).toBe(true);
+        if (valid.success) expect(valid.data.user.phone).toBe('+14155550199');
+
+        expect(payloadSchema.safeParse({ ...base, user: { ...base.user, phone: '415-555-0199' } }).success).toBe(false);
+        expect(payloadSchema.safeParse({ ...base, user: { ...base.user, phone: '+0123456789' } }).success).toBe(false);
+    });
 });
