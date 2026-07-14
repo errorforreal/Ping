@@ -78,14 +78,14 @@ export async function handleNotify(req: Request, res: Response) {
                         where: {
                             userId_type: {
                                 userId: u.id,
-                                type: ChannelType.WHATSAPP
+                                type: ChannelType.SMS
                             }
                         },
                         update: { value: phone },
                         create: {
                             userId: u.id,
                             value: phone,
-                            type: ChannelType.WHATSAPP
+                            type: ChannelType.SMS
                         }
                     });
                 }
@@ -115,11 +115,11 @@ export async function handleNotify(req: Request, res: Response) {
                         }
                     })
                 }
-                if (validPayload.channels.includes("WHATSAPP")) {
+                if (validPayload.channels.includes("SMS")) {
                     const phoneDelivery = await tx.notificationDelivery.create({
                         data: {
                             notificationId: Notification.id,
-                            channel: ChannelType.WHATSAPP
+                            channel: ChannelType.SMS
                         }
                     })
                 }
