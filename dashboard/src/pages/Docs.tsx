@@ -80,7 +80,7 @@ export default function Docs() {
             {activeTab === 'curl' && (
               <pre style={{ overflowX: 'auto', fontSize: '0.85rem', color: '#e2e8f0', lineHeight: '1.6', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', margin: 0 }}>
                 <code>
-{`curl -X POST https://api.ping.com/api/notify/v1 \\
+{`curl -X POST http://localhost:8000/api/notify/v1 \\
   -H "Content-Type: application/json" \\
   -H "ping-api-key: your_raw_api_key" \\
   -d '{
@@ -101,7 +101,7 @@ export default function Docs() {
             
             {activeTab === 'node' && (
               <pre style={{ overflowX: 'auto', fontSize: '0.85rem', color: '#abb2bf', lineHeight: '1.6', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', margin: 0 }}>
-                <code dangerouslySetInnerHTML={{ __html: `<span style="color: #c678dd">const</span> <span style="color: #e5c07b">response</span> = <span style="color: #c678dd">await</span> <span style="color: #61afef">fetch</span>(<span style="color: #98c379">'https://api.ping.com/api/notify/v1'</span>, {
+                <code dangerouslySetInnerHTML={{ __html: `<span style="color: #c678dd">const</span> <span style="color: #e5c07b">response</span> = <span style="color: #c678dd">await</span> <span style="color: #61afef">fetch</span>(<span style="color: #98c379">'http://localhost:8000/api/notify/v1'</span>, {
   <span style="color: #e06c75">method</span>: <span style="color: #98c379">'POST'</span>,
   <span style="color: #e06c75">headers</span>: {
     <span style="color: #98c379">'Content-Type'</span>: <span style="color: #98c379">'application/json'</span>,

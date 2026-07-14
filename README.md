@@ -43,7 +43,7 @@ Ping is under active development. The backend notification flow is implemented a
 ```text
 Tenant app / backend
         |
-        | POST /tenant/api/notify/v1
+        | POST /api/notify/v1
         | Header: ping-api-key
         v
 Express API
@@ -129,7 +129,7 @@ Response:
 Queues a notification for async delivery.
 
 ```http
-POST /tenant/api/notify/v1
+POST /api/notify/v1
 Content-Type: application/json
 ping-api-key: YOUR_API_KEY
 ```
