@@ -210,13 +210,20 @@ DATABASE_URL=
 REDIS_URL=
 JWT_SECRET=
 JWT_EXPIRES_IN=
-RESEND_API_KEY=
 EMAIL_FROM=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 SMS_FROM=
+TWILIO_STATUS_CALLBACK_URL=https://your-domain.example/api/webhooks/twilio/sms-status
 PORT=3000
 ```
+
+Use `SMTP_SECURE=true` with port 465 and `false` with port 587 (STARTTLS). Twilio SMS requests remain `PENDING` after acceptance and become successful only after a signed `delivered` callback. Delivery is at-least-once: a worker crash after provider acceptance but before the SID is saved can cause a duplicate submission.
 
 ## Planned Dashboard
 
