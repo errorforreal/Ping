@@ -7,6 +7,7 @@ import { analyticsRouter } from "./routes/analytics.js";
 import { handleNotify } from "./controller/notification.js";
 import { verifyKey } from "./middleware/apiKey.middleware.js";
 import { isRateLimited } from "./services/rateLimiter.js";
+import { handleTwilioSmsStatus } from "./controller/twilioWebhook.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.urlencoded({extended : false}));
 
 app.use("/tenant", tenantRouter);
 app.use("/analytics", analyticsRouter);
+app.post("/api/webhooks/twilio/sms-status", handleTwilioSmsStatus);
 app.post("/api/notify/v1", verifyKey, isRateLimited, handleNotify);
 
 
