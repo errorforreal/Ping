@@ -3,7 +3,6 @@ import '../components/Auth.css';
 
 export default function ApiKeys() {
   const [showRotateModal, setShowRotateModal] = useState(false);
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +16,8 @@ export default function ApiKeys() {
       const response = await fetch('/api/tenant/rotate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        credentials: 'include',
+        body: JSON.stringify({ password })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to regenerate key');
@@ -71,20 +71,13 @@ export default function ApiKeys() {
             )}
             <form onSubmit={handleRotate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
               <input 
-                type="email" 
-                placeholder="Email Address" 
-                className="auth-input text-mono" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                required 
-              />
-              <input 
                 type="password" 
                 placeholder="Password" 
                 className="auth-input text-mono" 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
                 required 
+                maxLength={128}
               />
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="submit" className="auth-button" disabled={isLoading} style={{ flex: 1 }}>

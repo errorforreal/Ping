@@ -25,15 +25,9 @@ export default function Analytics() {
     setIsLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('ping_token');
-      const res = await fetch('/api/analytics', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const res = await fetch('/api/analytics', { credentials: 'include' });
       
       if (res.status === 401) {
-        localStorage.removeItem('ping_token');
         window.location.href = '/auth';
         return;
       }

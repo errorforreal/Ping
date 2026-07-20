@@ -8,40 +8,19 @@ import ApiKeys from './pages/ApiKeys';
 import Docs from './pages/Docs';
 
 function App() {
-  // Initialize token synchronously to prevent redirect flashes on page reload
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ping_token'));
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
-  // Optional: Listen for cross-tab token changes
   useEffect(() => {
-    const handleStorage = () => {
-      setToken(localStorage.getItem('ping_token'));
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    fetch('/api/tenant/session', { credentials: 'include' })
+      .then(response => setAuthenticated(response.ok))
+      .catch(() => setAuthenticated(false));
   }, []);
 
-  const handleLogin = (newToken: string) => {
-    setToken(newToken);
-    localStorage.setItem('ping_token', newToken);
-  };
+  const handleLogin = () => setAuthenticated(true);
 
   const handleLogout = async () => {
-    if (!token) {
-      setToken(null);
-      localStorage.removeItem('ping_token');
-      return;
-    }
-
     try {
-      const [response] = await Promise.all([
-        fetch('/api/tenant/logout', { 
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }),
-        new Promise(resolve => setTimeout(resolve, 800)) // Artificial delay for UX spinner
-      ]);
+      const response = await fetch('/api/tenant/logout', { method: 'POST', credentials: 'include' });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -50,11 +29,11 @@ function App() {
     } catch (e) {
       console.error("Network error during server logout:", e);
     } finally {
-      // Always clear local session to ensure the user isn't trapped logged in
-      setToken(null);
-      localStorage.removeItem('ping_token');
+      setAuthenticated(false);
     }
   };
+
+  if (authenticated === null) return null;
 
   return (
     <BrowserRouter>
@@ -62,13 +41,13 @@ function App() {
         {/* Public Auth Route */}
         <Route 
           path="/auth" 
-          element={!token ? <Auth onLogin={handleLogin} /> : <Navigate to="/" replace />} 
+          element={!authenticated ? <Auth onLogin={handleLogin} /> : <Navigate to="/" replace />}
         />
 
         {/* Protected Dashboard Routes */}
         <Route 
           path="/" 
-          element={token ? <DashboardLayout onLogout={handleLogout} /> : <Navigate to="/auth" replace />}
+          element={authenticated ? <DashboardLayout onLogout={handleLogout} /> : <Navigate to="/auth" replace />}
         >
           <Route index element={<Analytics />} />
           <Route path="keys" element={<ApiKeys />} />

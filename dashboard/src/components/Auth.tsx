@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './Auth.css';
 
 interface AuthProps {
-  onLogin: (token: string) => void;
+  onLogin: () => void;
 }
 
 export default function Auth({ onLogin }: AuthProps) {
@@ -32,7 +32,8 @@ export default function Auth({ onLogin }: AuthProps) {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        credentials: 'include',
+        body: JSON.stringify(isLogin ? { email: formData.email, password: formData.password } : formData)
       });
 
       const data = await response.json();
@@ -42,8 +43,7 @@ export default function Auth({ onLogin }: AuthProps) {
       }
 
       if (isLogin) {
-        // Backend currently returns { message: "token" }
-        onLogin(data.message);
+        onLogin();
       } else {
         // Backend returns { message: "Tenant created successfully", apiKey: "..." }
         setNewApiKey(data.apiKey);
@@ -110,6 +110,8 @@ export default function Auth({ onLogin }: AuthProps) {
               className="auth-input text-mono" 
               placeholder="••••••••••••" 
               required 
+              minLength={isLogin ? 1 : 12}
+              maxLength={128}
               value={formData.password}
               onChange={handleChange}
             />
