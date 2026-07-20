@@ -7,6 +7,8 @@ declare global {
     interface Request {
         tenantId?: string;
         tenant?: authPayload;
+        authToken?: string;
+        requestId?: string;
     }
   }
 }
