@@ -6,7 +6,7 @@ The service is built around asynchronous delivery: API requests create notificat
 
 ## Current Status
 
-Ping is under active development. The backend notification flow is implemented and covered by focused unit tests. A minimal tenant dashboard is planned for API key onboarding, analytics, documentation, and delivery visibility.
+Ping is under active development. The backend notification flow and tenant dashboard are implemented and covered by focused tests.
 
 ## Features
 
@@ -34,7 +34,7 @@ Ping is under active development. The backend notification flow is implemented a
 - Redis
 - BullMQ
 - Zod
-- Resend
+- Nodemailer
 - Twilio
 - Vitest
 
@@ -102,7 +102,7 @@ Store this key securely. Ping stores only the hashed API key.
 
 ### Login
 
-Logs in a tenant and returns a JWT.
+Logs in a tenant and creates a secure HTTP-only session cookie.
 
 ```http
 POST /tenant/login
@@ -119,9 +119,7 @@ Content-Type: application/json
 Response:
 
 ```json
-{
-  "message": "jwt-token"
-}
+{ "message": "Login successful" }
 ```
 
 ### Send Notification
@@ -167,10 +165,11 @@ If `EMAIL` is requested, `user.email` is required. If `SMS` is requested, `user.
 
 ## Worker
 
-The worker processes jobs from the `notifications` queue.
+The API and worker are separate processes. The worker processes jobs from the `notifications` queue and owns recurring sweeper registration.
 
 ```bash
-npx tsx ./src/worker/worker.ts
+npm run dev:api
+npm run dev:worker
 ```
 
 The worker also registers a recurring sweeper job that checks for old `PENDING` notifications and attempts to enqueue them again.
@@ -183,10 +182,11 @@ Install dependencies:
 npm install
 ```
 
-Run the API:
+Run the API and worker in separate terminals:
 
 ```bash
-npm run dev
+npm run dev:api
+npm run dev:worker
 ```
 
 Run tests:
@@ -198,18 +198,20 @@ npm test
 Typecheck:
 
 ```bash
-npx tsc --noEmit
+npm run typecheck
 ```
 
 ## Environment Variables
 
-Create a `.env` file with:
+Copy `.env.example` to `.env`, then configure:
 
 ```env
 DATABASE_URL=
 REDIS_URL=
+TRUST_PROXY_HOPS=0
 JWT_SECRET=
 JWT_EXPIRES_IN=
+DASHBOARD_ALLOWED_ORIGINS=http://localhost:5173
 EMAIL_FROM=
 SMTP_HOST=
 SMTP_PORT=587
@@ -225,30 +227,22 @@ PORT=3000
 
 Use `SMTP_SECURE=true` with port 465 and `false` with port 587 (STARTTLS). Twilio SMS requests remain `PENDING` after acceptance and become successful only after a signed `delivered` callback. Delivery is at-least-once: a worker crash after provider acceptance but before the SID is saved can cause a duplicate submission.
 
-## Planned Dashboard
+## Dashboard
 
-The planned dashboard should be tenant-authenticated with JWT login, not API-key authenticated. The API key is for server-to-server notification sending.
+The dashboard uses a secure HTTP-only session cookie. The API key is reserved for server-to-server notification sending.
 
-Planned sections:
+Current sections:
 
-- Onboarding: show the API key once after signup
-- Analytics: total notifications, sent, failed, retrying, channel split, recent delivery failures
+- Signup: show the API key once after tenant creation
+- Analytics: totals, success rate, failures, and recent deliveries
 - API documentation: endpoint, headers, payload examples, response examples
-- Notification logs: per-notification and per-delivery status
 - API key management: rotate key, reveal key only at creation/rotation time
-- Settings: provider configuration and tenant profile
-
-The dashboard will require additional backend endpoints for analytics, logs, and API key rotation.
 
 ## Roadmap
 
 - Add bounded sweeper retry tracking with `queueAttempts` and `lastQueueAttemptAt`
-- Add delivery/log read APIs for dashboard analytics
-- Add API key rotation
+- Add detailed notification-log APIs
 - Add Docker Compose for Postgres and Redis
-- Add `.env.example`
-- Add centralized error handling and request logging
-- Add production security middleware
 - Add integration tests around queue and database behavior
 
 ## License
