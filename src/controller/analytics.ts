@@ -2,7 +2,8 @@ import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 
 export async function getAnalytics(req: Request, res: Response) {
-    const tenantId = (req as any).tenant.id;
+    const tenantId = req.tenant?.tenantId;
+    if (!tenantId) return res.status(401).json({ message: "Invalid token" });
 
     try {
         const totalSent = await prisma.notification.count({ where: { tenantId } });
@@ -34,7 +35,7 @@ export async function getAnalytics(req: Request, res: Response) {
         const mappedDeliveries = recentDeliveries.map(delivery => {
             // Find the specific channel value (e.g., the email address or phone number) for this delivery
             const userChannel = delivery.notification.user.channels.find(
-                (c: any) => c.type === delivery.channel
+                c => c.type === delivery.channel
             );
 
             return {
