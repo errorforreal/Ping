@@ -1,250 +1,136 @@
 # Ping
 
-Ping is a multi-tenant notification service for sending user notifications through email and SMS using a single API. Tenants sign up, receive an API key once, and use that key to enqueue notifications through the public notification endpoint.
+> Send transactional email and SMS through one API.
 
-The service is built around asynchronous delivery: API requests create notification records, enqueue BullMQ jobs, and workers process each delivery through provider-specific handlers.
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-ESM-339933?logo=node.js&logoColor=white)
+![Status](https://img.shields.io/badge/status-active_development-F59E0B)
 
-## Current Status
+Ping is a self-hosted, multi-tenant notification service. Applications send one request to Ping, and Ping validates, stores, queues, and delivers the notification through email, SMS, or both.
 
-Ping is under active development. The backend notification flow and tenant dashboard are implemented and covered by focused tests.
+## What is Ping?
 
-## Features
+Ping moves notification delivery out of your application's request cycle. Each tenant receives an API key for server-to-server requests, while PostgreSQL stores notification state and BullMQ workers deliver messages asynchronously through SMTP and Twilio.
 
-- Tenant signup and login
-- One-time raw API key return during signup
-- Hashed API key storage
-- API-key authentication for notification requests
-- Per-tenant Redis rate limiting
-- Notification payload validation with Zod
-- Email and SMS delivery channels
-- BullMQ queue-based background processing
-- Retry-aware worker flow
-- Sweeper job for old pending notifications
-- Delivery status tracking with provider message IDs, sent timestamps, and failure errors
-- Prisma/Postgres data model
-- Vitest test coverage for payload validation, controller behavior, providers, worker logic, and sweeper logic
+Ping also includes a tenant dashboard for account access, API-key rotation, delivery analytics, and integration examples.
 
-## Tech Stack
+## Key Features
 
-- Node.js
-- TypeScript
-- Express
-- Prisma
+- One API for transactional email and SMS
+- Asynchronous delivery with BullMQ and Redis
+- Multi-tenant API-key authentication and rate limiting
+- Per-channel delivery records, provider IDs, timestamps, and errors
+- Retry-aware workers and recovery of old pending notifications
+- Hashed API-key storage with one-time key display and secure rotation
+- Tenant dashboard with analytics and recent delivery activity
+- Signed Twilio status callbacks for carrier-confirmed SMS delivery
+
+## How Ping Works
+
+1. Your backend sends a notification using its `ping-api-key`.
+2. Ping validates the tenant, rate limit, recipients, message, and channels.
+3. Ping stores the notification and queues a BullMQ job.
+4. A worker sends each delivery through SMTP or Twilio.
+5. Email is marked sent after SMTP acceptance; SMS remains pending until Twilio reports its final status.
+
+## Quick Start
+
+### Requirements
+
+- Node.js and npm
 - PostgreSQL
 - Redis
-- BullMQ
-- Zod
-- Nodemailer
-- Twilio
-- Vitest
+- SMTP credentials
+- A Twilio account with an SMS-capable sender
+
+### Setup
+
+```bash
+git clone https://github.com/errorforreal/Ping.git
+cd Ping
+npm install
+npm --prefix dashboard install
+cp .env.example .env
+```
+
+Fill in `.env`, then apply the Prisma migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+Run the API, worker, and dashboard in separate terminals:
+
+```bash
+npm run dev:api
+npm run dev:worker
+npm --prefix dashboard run dev
+```
+
+The API runs at `http://localhost:3000` and the dashboard at `http://localhost:5173`. Check `GET /health` for the API process and `GET /ready` for PostgreSQL and Redis readiness.
+
+## Send Your First Ping
+
+Create a tenant and save the API key returned once:
+
+```bash
+curl -X POST http://localhost:3000/tenant/signup \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Acme","email":"admin@acme.com","password":"strong-password"}'
+```
+
+Send a notification:
+
+```bash
+curl -X POST http://localhost:3000/api/notify/v1 \
+  -H "Content-Type: application/json" \
+  -H "ping-api-key: YOUR_API_KEY" \
+  -d '{
+    "user":{"id":"user_123","email":"user@example.com","phone":"+919999999999"},
+    "notification":{"type":"ORDER_SHIPPED","title":"Order update","message":"Your order has shipped."},
+    "channels":["EMAIL","SMS"]
+  }'
+```
+
+Ping returns `201 Created` with a `jobId`. Use `EMAIL`, `SMS`, or both; the matching email or E.164 phone number is required.
+
+```json
+{"jobId":"ping-notification-user_123-notification_id"}
+```
+
+## Errors and Rate Limits
+
+| Status | Meaning |
+|---|---|
+| `400` | Missing API key or invalid notification payload |
+| `401` | API key is not recognized |
+| `403` | No tenant is available for the authenticated request |
+| `429` | Request limit exceeded |
+| `500` | Notification storage or queueing failed |
+
+Notification requests are limited to 100 requests per tenant every 15 minutes. Signup and login are limited to 10 attempts per IP or account every 15 minutes. Validation errors include field-level details; unexpected API errors include an `X-Request-ID` response header for tracing.
 
 ## Architecture
 
 ```text
-Tenant app / backend
+Application backend
         |
-        | POST /api/notify/v1
-        | Header: ping-api-key
+        | POST /api/notify/v1 + ping-api-key
         v
-Express API
+Express API -----> PostgreSQL
+        |          notifications, deliveries, tenants, users
         |
-        | validate API key, rate limit, validate payload
-        v
-Postgres
-        |
-        | create user, channels, notification, deliveries
         v
 BullMQ / Redis
         |
         v
-Worker
-        |
-        | dispatch by channel
-        v
-Email provider / SMS provider
+Notification worker
+        |--------------------|
+        v                    v
+SMTP / Nodemailer       Twilio SMS
+                             |
+                             v
+                 Signed delivery callback
 ```
 
-## API
-
-Base URL:
-
-```text
-http://localhost:3000
-```
-
-### Signup
-
-Creates a tenant and returns the raw API key once.
-
-```http
-POST /tenant/signup
-Content-Type: application/json
-```
-
-```json
-{
-  "name": "Acme",
-  "email": "admin@acme.com",
-  "password": "strong-password"
-}
-```
-
-Response:
-
-```json
-{
-  "message": "Tenant created successfully",
-  "apiKey": "raw-api-key-shown-once"
-}
-```
-
-Store this key securely. Ping stores only the hashed API key.
-
-### Login
-
-Logs in a tenant and creates a secure HTTP-only session cookie.
-
-```http
-POST /tenant/login
-Content-Type: application/json
-```
-
-```json
-{
-  "email": "admin@acme.com",
-  "password": "strong-password"
-}
-```
-
-Response:
-
-```json
-{ "message": "Login successful" }
-```
-
-### Send Notification
-
-Queues a notification for async delivery.
-
-```http
-POST /api/notify/v1
-Content-Type: application/json
-ping-api-key: YOUR_API_KEY
-```
-
-```json
-{
-  "user": {
-    "id": "user_123",
-    "email": "user@example.com",
-    "phone": "+919999999999"
-  },
-  "notification": {
-    "type": "ORDER_SHIPPED",
-    "title": "Order Update",
-    "message": "Your order has been shipped"
-  },
-  "channels": ["EMAIL", "SMS"]
-}
-```
-
-Response:
-
-```json
-{
-  "jobId": "ping-notification-user_123-notification_id"
-}
-```
-
-Supported channels:
-
-- `EMAIL`
-- `SMS`
-
-If `EMAIL` is requested, `user.email` is required. If `SMS` is requested, `user.phone` is required.
-
-## Worker
-
-The API and worker are separate processes. The worker processes jobs from the `notifications` queue and owns recurring sweeper registration.
-
-```bash
-npm run dev:api
-npm run dev:worker
-```
-
-The worker also registers a recurring sweeper job that checks for old `PENDING` notifications and attempts to enqueue them again.
-
-## Local Development
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run the API and worker in separate terminals:
-
-```bash
-npm run dev:api
-npm run dev:worker
-```
-
-Run tests:
-
-```bash
-npm test
-```
-
-Typecheck:
-
-```bash
-npm run typecheck
-```
-
-## Environment Variables
-
-Copy `.env.example` to `.env`, then configure:
-
-```env
-DATABASE_URL=
-REDIS_URL=
-TRUST_PROXY_HOPS=0
-JWT_SECRET=
-JWT_EXPIRES_IN=
-DASHBOARD_ALLOWED_ORIGINS=http://localhost:5173
-EMAIL_FROM=
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASS=
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-SMS_FROM=
-TWILIO_STATUS_CALLBACK_URL=https://your-domain.example/api/webhooks/twilio/sms-status
-PORT=3000
-```
-
-Use `SMTP_SECURE=true` with port 465 and `false` with port 587 (STARTTLS). Twilio SMS requests remain `PENDING` after acceptance and become successful only after a signed `delivered` callback. Delivery is at-least-once: a worker crash after provider acceptance but before the SID is saved can cause a duplicate submission.
-
-## Dashboard
-
-The dashboard uses a secure HTTP-only session cookie. The API key is reserved for server-to-server notification sending.
-
-Current sections:
-
-- Signup: show the API key once after tenant creation
-- Analytics: totals, success rate, failures, and recent deliveries
-- API documentation: endpoint, headers, payload examples, response examples
-- API key management: rotate key, reveal key only at creation/rotation time
-
-## Roadmap
-
-- Add bounded sweeper retry tracking with `queueAttempts` and `lastQueueAttemptAt`
-- Add detailed notification-log APIs
-- Add Docker Compose for Postgres and Redis
-- Add integration tests around queue and database behavior
-
-## License
-
-ISC
+The API and worker are separate processes. The API owns authentication, validation, persistence, and queue submission. The worker owns provider calls, retries, delivery-state updates, and the recurring sweeper that requeues old `PENDING` notifications.
